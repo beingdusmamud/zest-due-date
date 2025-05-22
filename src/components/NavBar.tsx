@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { CheckSquare, Menu, X, User } from "lucide-react";
+import { CheckSquare, Menu, X, User, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,11 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export function NavBar() {
   const { user, profile, signOut } = useAuth();
+  const { theme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +31,11 @@ export function NavBar() {
     };
   }, []);
 
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
   const getInitials = () => {
     if (profile?.full_name) {
       return profile.full_name.split(' ').map(name => name[0]).join('').toUpperCase();
@@ -37,37 +45,58 @@ export function NavBar() {
     return user?.email?.[0].toUpperCase() || 'U';
   };
 
+  const isLandingPage = location.pathname === "/";
+  const isDarkTheme = theme === "dark";
+
+  const determineTextColor = () => {
+    if (isDarkTheme) return "text-white";
+    if (isLandingPage && !isScrolled) return "text-white";
+    return "text-gray-900";
+  };
+
+  const textColorClass = determineTextColor();
+
   return (
     <nav
       className={`fixed top-0 w-full z-30 transition-all duration-300 ${
-        isScrolled 
-          ? "bg-white/90 backdrop-blur-sm shadow-sm text-gray-900" 
-          : "bg-transparent text-white"
+        (isScrolled || !isLandingPage || isDarkTheme) 
+          ? isDarkTheme 
+            ? "bg-slate-900/95 backdrop-blur-sm shadow-sm border-b border-slate-800" 
+            : "bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-100" 
+          : "bg-transparent"
       }`}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <CheckSquare className={`h-6 w-6 ${isScrolled ? "text-blue-600" : ""}`} />
-            <span className="font-bold text-xl">TaskFlow</span>
+            <CheckSquare className={`h-6 w-6 ${isScrolled || !isLandingPage || isDarkTheme ? "text-blue-600" : "text-white"}`} />
+            <span className={`font-bold text-xl ${textColorClass}`}>TaskFlow</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             <Link
               to="/"
-              className={`hover:text-blue-500 ${isScrolled ? "text-gray-700" : ""}`}
+              className={`hover:text-blue-500 ${textColorClass}`}
             >
               Home
             </Link>
             {user && (
-              <Link
-                to="/tasks"
-                className={`hover:text-blue-500 ${isScrolled ? "text-gray-700" : ""}`}
-              >
-                Tasks
-              </Link>
+              <>
+                <Link
+                  to="/tasks"
+                  className={`hover:text-blue-500 ${textColorClass}`}
+                >
+                  Tasks
+                </Link>
+                <Link
+                  to="/notes"
+                  className={`hover:text-blue-500 ${textColorClass}`}
+                >
+                  Notes
+                </Link>
+              </>
             )}
             
             {user ? (
@@ -89,6 +118,12 @@ export function NavBar() {
                       <span>Profile</span>
                     </DropdownMenuItem>
                   </Link>
+                  <Link to="/notes">
+                    <DropdownMenuItem className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Notes</span>
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem 
                     className="text-red-500 focus:text-red-500 cursor-pointer" 
                     onClick={() => signOut()}
@@ -102,14 +137,14 @@ export function NavBar() {
                 <Link to="/auth?mode=signin">
                   <Button 
                     variant="ghost"
-                    className={isScrolled ? "" : "text-white hover:text-white hover:bg-white/20"}
+                    className={isLandingPage && !isScrolled && !isDarkTheme ? "text-white hover:text-white hover:bg-white/20" : ""}
                   >
                     Sign In
                   </Button>
                 </Link>
                 <Link to="/auth">
                   <Button
-                    className={isScrolled ? "bg-blue-600 hover:bg-blue-700" : "bg-white text-blue-600 hover:bg-blue-50"}
+                    className={isLandingPage && !isScrolled && !isDarkTheme ? "bg-white text-blue-600 hover:bg-blue-50" : ""}
                   >
                     Sign Up
                   </Button>
@@ -121,7 +156,7 @@ export function NavBar() {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
-              className="p-2 rounded-md"
+              className={`p-2 rounded-md ${textColorClass}`}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
@@ -139,25 +174,50 @@ export function NavBar() {
             <div className="flex flex-col space-y-3">
               <Link
                 to="/"
-                className={`px-3 py-2 rounded-md ${isScrolled ? "text-gray-700 hover:bg-gray-100" : "hover:bg-white/10"}`}
+                className={`px-3 py-2 rounded-md ${
+                  isDarkTheme 
+                    ? "hover:bg-slate-800 text-gray-200" 
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
               </Link>
               {user && (
-                <Link
-                  to="/tasks"
-                  className={`px-3 py-2 rounded-md ${isScrolled ? "text-gray-700 hover:bg-gray-100" : "hover:bg-white/10"}`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Tasks
-                </Link>
+                <>
+                  <Link
+                    to="/tasks"
+                    className={`px-3 py-2 rounded-md ${
+                      isDarkTheme 
+                        ? "hover:bg-slate-800 text-gray-200" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Tasks
+                  </Link>
+                  <Link
+                    to="/notes"
+                    className={`px-3 py-2 rounded-md ${
+                      isDarkTheme 
+                        ? "hover:bg-slate-800 text-gray-200" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Notes
+                  </Link>
+                </>
               )}
               {user ? (
                 <>
                   <Link
                     to="/profile"
-                    className={`px-3 py-2 rounded-md ${isScrolled ? "text-gray-700 hover:bg-gray-100" : "hover:bg-white/10"} flex items-center`}
+                    className={`px-3 py-2 rounded-md ${
+                      isDarkTheme 
+                        ? "hover:bg-slate-800 text-gray-200" 
+                        : "text-gray-700 hover:bg-gray-100"
+                    } flex items-center`}
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <User className="mr-2 h-4 w-4" />
@@ -165,7 +225,11 @@ export function NavBar() {
                   </Link>
                   <Button
                     variant="ghost"
-                    className={`justify-start px-3 ${isScrolled ? "text-red-600 hover:bg-gray-100" : "hover:bg-white/10"}`}
+                    className={`justify-start px-3 ${
+                      isDarkTheme 
+                        ? "text-red-400 hover:bg-slate-800" 
+                        : "text-red-600 hover:bg-gray-100"
+                    }`}
                     onClick={() => {
                       signOut();
                       setIsMenuOpen(false);
@@ -179,17 +243,13 @@ export function NavBar() {
                   <Link to="/auth?mode=signin" onClick={() => setIsMenuOpen(false)}>
                     <Button 
                       variant="ghost" 
-                      className={`w-full justify-start px-3 ${
-                        isScrolled ? "" : "text-white hover:text-white hover:bg-white/20"
-                      }`}
+                      className="w-full justify-start px-3"
                     >
                       Sign In
                     </Button>
                   </Link>
                   <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                    <Button className={`w-full justify-start ${
-                      isScrolled ? "bg-blue-600 hover:bg-blue-700" : "bg-white text-blue-600 hover:bg-blue-50"
-                    }`}>
+                    <Button className="w-full justify-start">
                       Sign Up
                     </Button>
                   </Link>

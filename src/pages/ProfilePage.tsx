@@ -1,13 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, LogOut, Upload } from "lucide-react";
+import { User, LogOut, Upload, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Card,
@@ -17,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { toast } from "@/components/ui/sonner";
 
 const profileSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -27,6 +31,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const ProfilePage = () => {
   const { user, profile, signOut, updateProfile, uploadAvatar } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -63,6 +68,9 @@ const ProfilePage = () => {
       
       if (!error) {
         form.reset(values);
+        toast.success("Profile updated successfully");
+      } else {
+        toast.error("Failed to update profile");
       }
     } finally {
       setIsLoading(false);
@@ -78,7 +86,7 @@ const ProfilePage = () => {
     const fileSize = file.size / 1024 / 1024; // size in MB
     
     if (fileSize > 2) {
-      alert("File size must be less than 2MB");
+      toast.error("File size must be less than 2MB");
       return;
     }
     
@@ -88,12 +96,13 @@ const ProfilePage = () => {
       const { error, url } = await uploadAvatar(file);
       
       if (error) {
-        alert("Error uploading avatar");
+        toast.error("Error uploading avatar");
         return;
       }
       
       if (url) {
         setAvatarUrl(url);
+        toast.success("Avatar updated successfully");
       }
     } finally {
       setIsLoading(false);
@@ -135,7 +144,7 @@ const ProfilePage = () => {
               
               <Label 
                 htmlFor="avatar" 
-                className="cursor-pointer bg-blue-50 hover:bg-blue-100 transition text-blue-700 border border-blue-200 flex items-center gap-2 px-4 py-2 rounded-md w-full justify-center"
+                className="cursor-pointer bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 transition text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex items-center gap-2 px-4 py-2 rounded-md w-full justify-center"
               >
                 <Upload size={16} />
                 Upload Picture
@@ -148,7 +157,7 @@ const ProfilePage = () => {
                 disabled={isLoading}
                 className="hidden"
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 Max file size: 2MB
               </p>
             </CardContent>
@@ -156,12 +165,29 @@ const ProfilePage = () => {
           
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Account Actions</CardTitle>
+              <CardTitle>Preferences</CardTitle>
+              <CardDescription>Customize your experience</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="theme-mode">Dark Mode</Label>
+                  <p className="text-sm text-muted-foreground">Switch between light and dark themes</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sun size={18} className="text-yellow-500" />
+                  <Switch 
+                    id="theme-mode"
+                    checked={theme === "dark"}
+                    onCheckedChange={toggleTheme}
+                  />
+                  <Moon size={18} className="text-blue-500" />
+                </div>
+              </div>
+              
               <Button 
                 variant="outline" 
-                className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700" 
+                className="w-full text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900/50 dark:hover:bg-red-900/20" 
                 onClick={() => signOut()}
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -172,7 +198,7 @@ const ProfilePage = () => {
         </div>
         
         <div className="md:col-span-2">
-          <Card>
+          <Card className="dark:bg-slate-800">
             <CardHeader>
               <CardTitle>Profile Information</CardTitle>
               <CardDescription>Update your profile details</CardDescription>
@@ -187,9 +213,9 @@ const ProfilePage = () => {
                       type="email"
                       value={user.email || ""}
                       disabled
-                      className="bg-gray-50"
+                      className="bg-gray-50 dark:bg-slate-700/50"
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Email cannot be changed
                     </p>
                   </div>
