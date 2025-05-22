@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, List, Plus } from 'lucide-react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
@@ -8,6 +8,7 @@ import { CalendarView } from '@/components/CalendarView';
 import { TaskForm } from '@/components/TaskForm';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type Priority = 'low' | 'medium' | 'high';
 export type Category = 'work' | 'personal' | 'shopping' | 'health' | 'other';
@@ -24,6 +25,7 @@ export interface Task {
 }
 
 const Index = () => {
+  const { user } = useAuth();
   const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
   const [tasks, setTasks] = useState<Task[]>([
     {
