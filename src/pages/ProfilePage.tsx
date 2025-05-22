@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -200,7 +199,7 @@ const ProfilePage = () => {
                     <Input
                       id="username"
                       {...form.register("username")}
-                      error={!!form.formState.errors.username}
+                      className={form.formState.errors.username ? "border-red-500" : ""}
                     />
                     {form.formState.errors.username && (
                       <p className="text-red-500 text-sm">
